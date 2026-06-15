@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>傳統美食猜國家 - 10題經典挑戰版</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        h1 { color: #e65100; margin-bottom: 5px; }
+        .round-badge {
+            background-color: #e65100; color: white; padding: 5px 15px;
+            border-radius: 20px; font-size: 14px; display: inline-block;
+            margin-bottom: 15px; font-weight: bold;
+        }
+        .score-board {
+            display: flex; justify-content: space-between; font-size: 18px;
+            font-weight: bold; margin-bottom: 20px; background: #fff3e0;
+            padding: 12px 20px; border-radius: 8px; border: 1px solid #ffe0b2;
+        }
+        img {
+            width: 100%; height: 320px; object-fit: cover;
+            border-radius: 12px; margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .ux-tip {
+            font-size: 13px; color: #757575; margin-bottom: 15px;
+            background: #eee; padding: 6px; border-radius: 4px;
+        }
+        .hints {
+            margin: 15px 0; text-align: left; background: #f1f8e9;
+            padding: 15px; border-radius: 8px; border: 1px solid #dcedc8;
+        }
+        .hint-text { color: #33691e; margin: 10px 0; font-weight: bold; min-height: 24px; }
+        .trivia-box {
+            margin: 20px 0; text-align: left; background: #fff8e1;
+            padding: 20px; border-radius: 10px; border: 1px solid #ffe0b2;
+            font-size: 15px; line-height: 1.6; display: none;
+        }
+        .trivia-title { color: #e65100; font-weight: bold; font-size: 18px; margin-bottom: 8px; }
+        .btn {
+            padding: 10px 18px; margin: 5px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.2s;
+        }
+        .btn-hint { background-color: #8bc34a; color: white; }
+        .btn-hint:hover { background-color: #7cb342; }
+        .btn-submit { background-color: #ff9800; color: white; }
+        .btn-submit:hover { background-color: #f57c00; }
+        .btn-giveup { background-color: #e53935; color: white; }
+        .btn-giveup:hover { background-color: #d32f2f; }
+        .btn-next { background-color: #1e88e5; color: white; width: 100%; margin-top: 15px; font-size: 18px; padding: 12px;}
+        .btn-next:hover { background-color: #1565c0; }
+        .btn:disabled { background-color: #e0e0e0; color: #9e9e9e; cursor: not-allowed; }
+        input[type="text"] {
+            padding: 12px; font-size: 16px; width: 65%; border: 2px solid #ccc;
+            border-radius: 8px; margin-bottom: 15px; box-sizing: border-box;
+        }
+        input[type="text"]:focus { outline: none; border-color: #ff9800; }
+        .feedback { font-size: 18px; font-weight: bold; margin: 15px 0; min-height: 27px; }
+        .correct { color: #4caf50; }
+        .wrong { color: #f44336; }
+        #game-over-screen { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="game-area">
+    <h1>🌍 傳統美食猜國家</h1>
+    <div class="round-badge">美食文化挑戰賽</div>
+    
+    <div class="score-board">
+        <span id="question-counter">題目: 1 / 10</span>
+        <span id="score-display">總得分: 0</span>
+    </div>
+
+    <img id="food-image" src="" alt="美食圖片">
+    <div class="ux-tip">💡 規則說明：必須【答對】或點擊【放棄此題】解鎖故事與下一題按鈕！</div>
+
+    <div class="hints">
+        <button class="btn btn-hint" id="btn-hint1" onclick="showHint(1)">💡 提示一 (主成分)</button>
+        <button class="btn btn-hint" id="btn-hint2" onclick="showHint(2)" disabled>💡 提示二 (所在大陸)</button>
+        <div class="hint-text" id="hint1-display"></div>
+        <div class="hint-text" id="hint2-display"></div>
+    </div>
+
+    <div id="input-area">
+        <input type="text" id="answer-input" placeholder="輸入國家名稱 (中英文皆可)" onkeypress="handleEnter(event)">
+        <br>
+        <button class="btn btn-submit" id="btn-submit" onclick="checkAnswer()">提交答案</button>
+        <button class="btn btn-giveup" id="btn-giveup" onclick="giveUp()">放棄此題 (看答案)</button>
+    </div>
+
+    <div class="feedback" id="feedback-message"></div>
+    <div class="trivia-box" id="trivia-box"></div>
+    <button class="btn btn-next" id="btn-next" onclick="nextQuestion()" style="display: none;">下一題 ➡️</button>
+</div>
+
+<div class="container" id="game-over-screen">
+    <h1>🏆 挑戰全數結束！</h1>
+    <h2>最終總得分：<span id="final-score" style="color: #e53935; font-size: 40px;"></span> / 100</h2>
+    <p id="final-evaluation" style="font-size: 18px; font-weight: bold; margin: 20px 0;"></p>
+    <button class="btn btn-next" onclick="location.reload()">重新洗牌，再次挑戰 ➡️</button>
+</div>
+
+<script>
+    const masterPool = [
+        { 
+            flag: "🇫🇷", imageUrl: "法國.jpg", answers: ["法國", "法国", "france"], 
+            hint1: "主要成分：麵粉、大量奶油、酵母 (呈現酥脆層次可頌)", hint2: "發源地所在大陸：歐洲",
+            origin: "可頌（Croissant）常被視為法國代表，但其前身其實是奧地利的傳統點心「維也納牛角麵包」。1770年由瑪麗·安東妮王后傳入法國，經當地麵包師改良，大量起酥奶油層疊揉製，才演變成今日外皮香脆、內部蓬鬆的法國經典象徵。"
+        },
+        { 
+            flag: "🇮🇹", imageUrl: "義大利.jpg", answers: ["義大利", "意大利", "italy"], 
+            hint1: "主要成分：麵團、番茄醬、莫札瑞拉起司 (經典披薩)", hint2: "發源地所在大陸：歐洲",
+            origin: "現代披薩起源於義大利南部的拿坡里，最初是平民的廉價街頭食品。1889年，廚師為瑪格麗特王后特製了一款融合番茄、莫札瑞拉起司與羅勒葉的披薩，色彩剛好呼應義大利國旗的紅白綠，自此「瑪格麗特披薩」便風靡全球。"
+        },
+        { 
+            flag: "🇪🇸", imageUrl: "https://images.unsplash.com/photo-1534080564583-6be75777b70a?w=600&q=80", answers: ["西班牙", "spain"], 
+            hint1: "主要成分：米飯、番紅花(賦予黃色)、豐富海鮮或肉類", hint2: "發源地所在大陸：歐洲",
+            origin: "西班牙海鮮燉飯（Paella）發源於東岸的瓦倫西亞。最初是農夫在田間工作時，將米飯、兔肉、蝸牛與蔬菜放入大平底鍋就地烹煮的庶民料理。隨後傳播至沿海，融入豐富海鮮與珍貴的番紅花香料，成為如今享譽國際的黃金盛宴。"
+        },
+        { 
+            flag: "🇬🇷", imageUrl: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80", answers: ["希臘", "希腊", "greece"], 
+            hint1: "主要成分：番茄、小黃瓜、費塔起司(Feta)、黑橄欖、橄欖油", hint2: "發源地所在大陸：歐洲",
+            origin: "希臘沙拉在當地被稱為「鄉村沙拉」，完美體現了地中海飲食精髓。起源於地中海農村，農夫們將自家現採的鮮甜番茄、黃瓜，切塊後豪邁地鋪上一整塊富含草本香氣的費塔起司與黑橄欖，淋上大量在地精榨橄欖油，清爽無負擔。"
+        },
+        { 
+            flag: "🇧🇪", imageUrl: "比利時.jpg", answers: ["比利時", "比利时", "belgium"], 
+            hint1: "主要成分：格子狀發酵麵團、雞蛋、牛奶、珍珠糖", hint2: "發源地所在大陸：歐洲",
+            origin: "比利時鬆餅以「列日鬆餅」最具代表，起源於18世紀的列日市。相傳是一位采邑主教的廚師，嘗試將當時昂貴的珍珠糖揉入厚實的酵母麵團中烘烤。珍珠糖在高溫下溶化形成迷人的焦糖糖衣，咬下時外脆內軟、甜而不膩。"
+        },
+        { 
+            flag: "🇨🇦", imageUrl: "加拿大.jpg", answers: ["加拿大", "canada"], 
+            hint1: "主要成分：現炸馬鈴薯條、起司塊(Cheese Curds)、濃郁肉汁", hint2: "發源地所在大陸：北美洲",
+            origin: "肉汁起司薯條（Poutine）發源於1950年代末期的魁北克省農村。最初是一位顧客要求老闆把起司塊和熱騰騰的現炸薯條混在一起，老闆笑稱這真是個「混亂的組合」（Poutine的原意）。後來淋上靈魂肉汁，成了暖胃的國民美食。"
+        },
+        { 
+            flag: "🇧🇷", imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=80", answers: ["巴西", "brazil"], 
+            hint1: "主要成分：大塊牛肉/豬肉、粗鹽、鐵串炭火直烤", hint2: "發源地所在大陸：南美洲",
+            origin: "巴西烤肉（Churrasco）起源於17至18世紀南部的原始大草原。當時被稱為「高喬人」的南美牛仔，在長途驅趕牛群時，會就地砍下樹枝串起大塊牛肉，撒上粗鹽後直接插在炭火旁慢火炙烤，完整鎖住肉汁，演變成豪邁的國宴級美味。"
+        },
+        { 
+            flag: "🇲🇱", imageUrl: "馬利.jpg", answers: ["馬利", "马利", "馬利共和國", "mali"], 
+            hint1: "主要成分：花生醬、肉類(雞或牛)、番茄膏、根莖蔬菜 (花生燉)", hint2: "發源地所在大陸：非洲",
+            origin: "花生燉肉（Mafe）是西非馬利共和國的傳統國菜，歷史可追溯至殖民前時期。西非盛產花生，當地曼丁哥族人將烘烤過的花生磨成濃郁的花生醬作為湯底，加入番茄、肉類及根莖蔬菜慢火熬燉，滋味溫潤醇厚，完美展現西非農作智慧。"
+        },
+        { 
+            flag: "🇻🇳", imageUrl: "越南.jpg", answers: ["越南", "vietnam", "vn"], 
+            hint1: "主要成分：透明米紙、鮮蝦、豬肉片、米線、生菜、魚露沾醬 (越南春捲)", hint2: "發源地所在大陸：亞洲",
+            origin: "越南春捲（Gỏi cuốn）發源於越南南部，是歷史悠久的傳統庶民小吃。因當地氣候炎東，人們利用薄如蟬翼的稻米紙，包裹清爽的生菜、香草、米線與鮮蝦，不經油炸直接沾取特調魚露食用，體現了東南亞料理追求清爽健康低脂的飲食哲學。"
+        },
+        { 
+            flag: "🇯🇵", imageUrl: "日本.jpg", answers: ["日本", "japan", "jp"], 
+            hint1: "主要成分：蕎麥粉製成的麵條、柴魚醬汁、芥末、青蔥 (蕎麥麵)", hint2: "發源地所在大陸：亞洲",
+            origin: "蕎麥麵（Soba）在日本歷史悠久，但在江戶時代才真正演變成如今的麵條形式。當時江戶市民因長期食用精白米普遍缺乏維生素B1，而富含營養的蕎麥麵成了最佳食療，並迅速在街頭攤販流行，演變成日本代表性的江戶職人文化。"
+        }
+    ];
+
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let totalScore = 0;
+    let currentHintsUsed = 0;
+    let questionAnswered = false;
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function initGame() {
+        shuffleArray(masterPool);
+        currentQuestions = masterPool;
+        currentQuestionIndex = 0;
+        totalScore = 0;
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (!currentQuestions || currentQuestions.length === 0) return;
+        const q = currentQuestions[currentQuestionIndex];
+        
+        document.getElementById('food-image').src = q.imageUrl;
+        document.getElementById('question-counter').innerText = `題目: ${currentQuestionIndex + 1} / 10`;
+        document.getElementById('score-display').innerText = `總得分: ${totalScore}`;
+        
+        currentHintsUsed = 0;
+        questionAnswered = false;
+        
+        document.getElementById('answer-input').value = "";
+        document.getElementById('answer-input').disabled = false;
+        document.getElementById('feedback-message').innerText = "";
+        document.getElementById('feedback-message').className = "feedback";
+        
+        document.getElementById('hint1-display').innerText = "";
+        document.getElementById('hint2-display').innerText = "";
+        document.getElementById('btn-hint1').disabled = false;
+        document.getElementById('btn-hint2').disabled = true;
+        
+        document.getElementById('trivia-box').style.display = "none";
+        document.getElementById('btn-next').style.display = "none"; 
+        document.getElementById('answer-input').focus();
+    }
+
+    function showHint(level) {
+        const q = currentQuestions[currentQuestionIndex];
+        if (level === 1) {
+            document.getElementById('hint1-display').innerText = q.hint1;
+            document.getElementById('btn-hint1').disabled = true;
+            document.getElementById('btn-hint2').disabled = false;
+            currentHintsUsed = 1;
+        } else if (level === 2) {
+            document.getElementById('hint2-display').innerText = q.hint2;
+            document.getElementById('btn-hint2').disabled = true;
+            currentHintsUsed = 2;
+        }
+    }
+
+    function handleEnter(event) {
+        if (event.key === "Enter") { checkAnswer(); }
+    }
+
+    function checkAnswer() {
+        if (questionAnswered) return;
+        const userInput = document.getElementById('answer-input').value.replace(/^[\s\u3000]+|[\s\u3000]+$/g, '').toLowerCase();
+        
+        if (userInput === "") {
+            showMessage("⚠️ 請輸入答案後再提交！", "wrong");
+            return;
+        }
+
+        const q = currentQuestions[currentQuestionIndex];
+        if (q.answers.includes(userInput)) {
+            let pointsEarned = 0;
+            if (currentHintsUsed === 0) pointsEarned = 10;
+            else if (currentHintsUsed === 1) pointsEarned = 5;
+            else if (currentHintsUsed === 2) pointsEarned = 3;
+
+            totalScore += pointsEarned;
+            document.getElementById('score-display').innerText = `總得分: ${totalScore}`;
+            showMessage(`✅ 答對了！正確答案是【${q.answers[0]}】。獲得 ${pointsEarned} 分！`, "correct");
+            endQuestion();
+        } else {
+            showMessage("❌ 猜錯囉！再試試看，或者點擊提示、點擊放棄看答案。", "wrong");
+        }
+    }
+
+    function giveUp() {
+        if (questionAnswered) return;
+        const q = currentQuestions[currentQuestionIndex];
+        showMessage(`👋 已放棄本題。正確答案是【${q.answers[0]}】。本題獲得 0 分。`, "wrong");
+        endQuestion();
+    }
+
+    function showMessage(msg, className) {
+        const feedback = document.getElementById('feedback-message');
+        feedback.innerText = msg;
+        feedback.className = `feedback ${className}`;
+    }
+
+    function endQuestion() {
+        questionAnswered = true;
+        document.getElementById('answer-input').disabled = true;
+        document.getElementById('btn-hint1').disabled = true;
+        document.getElementById('btn-hint2').disabled = true;
+        
+        const q = currentQuestions[currentQuestionIndex];
+        const triviaBox = document.getElementById('trivia-box');
+        triviaBox.innerHTML = `
+            <div class="trivia-title">${q.flag} 美食起源小知識</div>
+            <div>${q.origin}</div>
+        `;
+        triviaBox.style.display = "block";
+        document.getElementById('btn-next').style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < 10) { loadQuestion(); } else { showGameOver(); }
+    }
+
+    function showGameOver() {
+        document.getElementById('game-area').style.display = "none";
+        document.getElementById('game-over-screen').style.display = "block";
+        document.getElementById('final-score').innerText = totalScore;
+        
+        let evalText = "";
+        if (totalScore === 100) evalText = "🥇 滿分 100！世界美食之王就是你！";
+        else if (totalScore >= 80) evalText = "👑 厲害！你對全球傳統美食有極高深的研究！";
+        else if (totalScore >= 60) evalText = "✨ 表現優異！點滿了美食常識與吃貨的天賦線！";
+        else if (totalScore >= 40) evalText = "👍 及格了！是個稱職的旅行饕客！";
+        else evalText = "🥗 沒關係！藉由這 10 道經典料理的故事，你已經成功環遊世界一圈囉！";
+        
+        document.getElementById('final-evaluation').innerText = evalText;
+    }
+
+    window.onload = initGame;
+</script>
+</body>
+</html>
